@@ -1,0 +1,204 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuarios</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background-color: aqua;
+            padding: 20px;
+        }
+        .container {
+            background:white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px violet;
+            display: inline-block;
+        }
+        input, button {
+            margin: 5px;
+            padding: 10px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+        th {
+            background-color: wheat;
+        }
+        img {
+            width: 100px;
+            margin-bottom: 10px;
+        }
+        .modal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: violet (0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background: plum;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px violet;
+            text-align: center;
+        }
+        .modal button {
+            margin-top: 10px;
+            padding: 10px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2>INSTRUCCIONES</h2>
+            <p>Generar Contrasena</p>
+            <p>Registro de usuarios</p>
+            <p>Para cada usuario, solicitar los siguientes datos:</p>
+            <ul>
+                <li>Nombre</li>
+                <li>Edad</li>
+                <li>CURP</li>
+            </ul>
+            <p>Generar una contraseña aleatoria con:</p>
+            <ul>
+                <li>16 caracteres</li>
+                <li>Mayúsculas</li>
+                <li>Minúsculas</li>
+                <li>Números</li>
+                <li>Carácter Especial</li>
+            </ul>
+            <button onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <img src="https://th.bing.com/th/id/OIP.XfFpQKUnhHa6LqeH5WKOjgHaE7?w=257&h=180&c=7&r=0&o=5&dpr=1.3&pid=1.7" alt="Imagen">
+        <h1>Registro de Usuarios</h1>
+        <input type="text" id="nombre" placeholder="Nombre">
+        <input type="number" id="edad" placeholder="Edad">
+        <input type="text" id="curp" placeholder="CURP">
+        <button onclick="registrarUsuario()">Registrar</button>
+        <button onclick="mostrarUsuarios()">Mostrar Usuarios</button>
+
+        <table id="tablaUsuarios">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Edad</th>
+                    <th>CURP</th>
+                    <th>Contraseña Encriptada</th>
+                    <th>Ver Contraseña</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let usuarios = [];
+
+        function generarContrasena() {
+            let mayus = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            let minus = "abcdefghijklmnopqrstuvwxyz";
+            let numeros = "0123456789";
+            let especiales = "@#$%^&*()_+!";
+            let todo = mayus + minus + numeros + especiales;
+
+            let contrasena = 
+                mayus[Math.floor(Math.random() * mayus.length)] +
+                minus[Math.floor(Math.random() * minus.length)] +
+                numeros[Math.floor(Math.random() * numeros.length)] +
+                especiales[Math.floor(Math.random() * especiales.length)];
+
+            for (let i = 4; i < 16; i++) {
+                contrasena += todo[Math.floor(Math.random() * todo.length)];
+            }
+            return contrasena.split('').sort(() => 0.5 - Math.random()).join('');
+        }
+
+        function registrarUsuario() {
+            let nombre = document.getElementById("nombre").value;
+            let edad = document.getElementById("edad").value;
+            let curp = document.getElementById("curp").value;
+
+            if (nombre && edad && curp) {
+                let contrasena = generarContrasena();
+                let contrasenaHash = CryptoJS.SHA256(contrasena).toString();
+                usuarios.push({ nombre, edad, curp, contrasena: contrasena, contrasenaHash: contrasenaHash });
+                alert("Usuario registrado exitosamente.");
+
+                let continuar = confirm("¿Deseas registrar otro usuario?");
+                if (!continuar) {
+                    cerrarModal();
+                    mostrarUsuarios();
+                } else {
+                    actualizarTabla();
+                }
+            } else {
+                alert("Por favor, completa todos los campos.");
+            }
+        }
+
+        function mostrarUsuarios() {
+            let tabla = document.getElementById("tablaUsuarios").getElementsByTagName('tbody')[0];
+            tabla.innerHTML = "";
+            usuarios.forEach((usuario, index) => {
+                let fila = tabla.insertRow();
+                fila.insertCell(0).textContent = usuario.nombre;
+                fila.insertCell(1).textContent = usuario.edad;
+                fila.insertCell(2).textContent = usuario.curp;
+                fila.insertCell(3).textContent = usuario.contrasenaHash;
+
+                // Celda para el botón de mostrar/ocultar contraseña
+                let botonVer = fila.insertCell(4);
+                let mostrar = false;
+                let boton = document.createElement("button");
+                boton.textContent = "Ver Contraseña";
+                boton.onclick = () => {
+                    if (mostrar) {
+                        boton.textContent = "Ocultar Contraseña";
+                        fila.cells[3].textContent = usuario.contrasena;  // Mostrar contraseña en texto claro
+                    } else {
+                        boton.textContent = "Ver Contraseña";
+                        fila.cells[3].textContent = usuario.contrasenaHash;  // Mostrar solo el hash
+                    }
+                    mostrar = !mostrar;
+                };
+                botonVer.appendChild(boton);
+            });
+        }
+
+        function actualizarTabla() {
+            let tabla = document.getElementById("tablaUsuarios").getElementsByTagName('tbody')[0];
+            tabla.innerHTML = "";
+            usuarios.forEach(usuario => {
+                let fila = tabla.insertRow();
+                fila.insertCell(0).textContent = usuario.nombre;
+                fila.insertCell(1).textContent = usuario.edad;
+                fila.insertCell(2).textContent = usuario.curp;
+                fila.insertCell(3).textContent = usuario.contrasenaHash;  // Mostrar la contraseña encriptada
+            });
+        }
+
+        function cerrarModal() {
+            document.getElementById("modal").style.display = "none";
+        }
+    </script>
+</body>
+</html>
